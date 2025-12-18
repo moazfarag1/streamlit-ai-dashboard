@@ -1,0 +1,51 @@
+product_id,category,subcategory,brand,color,size,material,season,gender,original_price,competitor_price,discount_percentage,date,day_of_week,is_weekend,is_holiday_season,stock_quantity,rating,number_of_reviews,website_views,cart_additions,return_rate,days_since_launch
+NEW_001,Shoes,Sneakers,Nike,White,10,Synthetic,Spring,Men,120.00,115.50,0,2025-05-01,Thursday,0,0,150,0.0,0,450,45,0.12,0
+NEW_002,Dresses,Maxi Dresses,Zara,Red,M,Cotton,Summer,Women,89.90,95.00,0,2025-05-02,Friday,0,0,200,0.0,0,890,120,0.15,0
+NEW_003,Accessories,Bags,Gucci,Black,One Size,Leather,Fall,Women,1250.00,1300.00,0,2025-09-10,Wednesday,0,0,20,5.0,2,2500,50,0.05,0
+NEW_004,Activewear,Leggings,Lululemon,Black,S,Spandex,Spring,Women,98.00,90.00,0,2025-04-15,Tuesday,0,0,500,0.0,0,1200,300,0.08,0
+NEW_005,Jackets,Denim Jackets,Levi's,Blue,L,Denim,Fall,Men,85.50,80.00,0,2025-08-20,Wednesday,0,0,120,4.2,5,340,30,0.18,0
+NEW_006,Shoes,Boots,Timberland,Tan,11,Leather,Winter,Men,190.00,185.00,0,2025-11-01,Saturday,1,1,300,0.0,0,600,80,0.10,0
+NEW_007,Accessories,Watches,Rolex,Silver,One Size,Steel,Summer,Men,8500.00,8200.00,0,2025-06-15,Sunday,1,0,5,0.0,0,5000,10,0.02,0
+NEW_008,Activewear,Sports Bras,Nike,Pink,M,Polyester,Summer,Women,45.00,42.00,10,2025-06-01,Sunday,1,0,400,4.5,12,800,150,0.12,0
+NEW_009,Jeans,Skinny Jeans,H&M,Black,32,Denim,Spring,Men,39.99,35.00,0,2025-03-10,Monday,0,0,600,3.8,40,900,100,0.22,0
+NEW_010,Dresses,Party Dresses,Prada,Gold,S,Silk,Winter,Women,2200.00,2100.00,0,2025-12-15,Monday,0,1,15,0.0,0,3200,80,0.15,0
+NEW_011,Shoes,Sandals,Birkenstock,Brown,9,Cork,Summer,Unisex,130.00,125.00,0,2025-07-01,Tuesday,0,0,250,4.8,150,1500,400,0.05,0
+NEW_012,Jackets,Puffer Jackets,North Face,Black,XL,Nylon,Winter,Men,280.00,300.00,0,2025-11-20,Thursday,0,1,180,4.7,20,2100,350,0.09,0
+NEW_013,Accessories,Sunglasses,Ray-Ban,Black,One Size,Plastic,Summer,Unisex,160.00,150.00,0,2025-05-25,Sunday,1,0,300,4.4,50,950,120,0.11,0
+NEW_014,Activewear,Hoodies,Adidas,Grey,L,Cotton Blend,Fall,Men,65.00,60.00,0,2025-09-05,Friday,0,0,450,4.1,25,1100,200,0.16,0
+NEW_015,Dresses,Casual Dresses,Gap,Navy,M,Cotton,Spring,Women,59.95,55.00,20,2025-04-02,Wednesday,0,0,350,3.9,15,500,60,0.19,0
+NEW_016,Shoes,Running Shoes,Asics,Blue,10,Mesh,Summer,Men,140.00,135.00,0,2025-06-10,Tuesday,0,0,220,0.0,0,670,90,0.13,0
+NEW_017,Jeans,Straight Jeans,Zara,Light Blue,34,Denim,Summer,Men,49.90,45.00,0,2025-05-18,Sunday,1,0,280,3.5,10,480,55,0.25,0
+NEW_018,Accessories,Scarves,Burberry,Beige,One Size,Cashmere,Winter,Unisex,450.00,420.00,0,2025-12-01,Monday,0,1,80,4.9,10,1800,200,0.08,0
+NEW_019,Jackets,Blazers,Hugo Boss,Navy,42,Wool,Fall,Men,550.00,500.00,0,2025-09-15,Monday,0,0,60,4.6,8,500,40,0.14,0
+NEW_020,Shoes,Heels,Jimmy Choo,Silver,7,Leather,Spring,Women,895.00,900.00,0,2025-03-20,Thursday,0,0,40,0.0,0,2900,150,0.18,0
+NEW_021,Activewear,Shorts,Under Armour,Black,M,Polyester,Summer,Men,35.00,30.00,0,2025-06-25,Wednesday,0,0,600,4.3,45,850,210,0.10,0
+NEW_022,Dresses,Wrap Dresses,H&M,Green,L,Viscose,Spring,Women,34.99,30.00,0,2025-04-10,Thursday,0,0,500,3.7,22,600,90,0.21,0
+NEW_023,Accessories,Hats,New Era,Navy,One Size,Cotton,Summer,Men,35.00,32.00,0,2025-07-04,Friday,0,0,400,4.5,100,700,180,0.05,0
+NEW_024,Jeans,Mom Jeans,Levi's,Black,28,Denim,Fall,Women,98.00,90.00,0,2025-09-01,Monday,0,0,150,4.4,60,920,140,0.16,0
+NEW_025,Shoes,Loafers,Gucci,Black,9,Leather,Fall,Men,950.00,920.00,0,2025-10-10,Friday,0,0,30,4.8,12,3100,250,0.07,0
+NEW_026,Jackets,Trench Coats,Burberry,Beige,M,Cotton Gabardine,Spring,Women,2200.00,2100.00,0,2025-03-15,Saturday,1,0,25,5.0,5,4500,300,0.09,0
+NEW_027,Activewear,Yoga Pants,Alo Yoga,Grey,S,Nylon,Winter,Women,110.00,100.00,0,2025-01-20,Monday,0,0,300,4.6,80,1100,250,0.11,0
+NEW_028,Dresses,Mini Dresses,Forever 21,Pink,S,Polyester,Summer,Women,24.99,20.00,0,2025-06-18,Wednesday,0,0,800,3.2,15,400,60,0.28,0
+NEW_029,Accessories,Belts,Hermes,Orange,One Size,Leather,Fall,Unisex,800.00,750.00,0,2025-09-22,Monday,0,0,40,4.9,30,5000,400,0.03,0
+NEW_030,Shoes,Sneakers,Converse,White,8,Canvas,Summer,Unisex,65.00,60.00,0,2025-05-30,Friday,0,0,600,4.7,200,1200,350,0.08,0
+NEW_031,Jackets,Bomber Jackets,Alpha Industries,Green,L,Nylon,Fall,Men,180.00,160.00,0,2025-10-05,Sunday,1,0,100,4.5,40,650,90,0.15,0
+NEW_032,Jeans,Ripped Jeans,American Eagle,Blue,30,Denim,Summer,Women,59.95,50.00,10,2025-07-12,Saturday,1,0,400,4.1,85,800,160,0.20,0
+NEW_033,Activewear,Tank Tops,Nike,Black,L,Cotton,Summer,Men,25.00,22.00,0,2025-06-05,Thursday,0,0,1000,4.2,60,500,110,0.14,0
+NEW_034,Shoes,Boots,Dr. Martens,Black,7,Leather,Fall,Women,170.00,160.00,0,2025-09-28,Sunday,1,0,250,4.6,120,1400,310,0.10,0
+NEW_035,Accessories,Wallets,Louis Vuitton,Brown,One Size,Canvas,Winter,Women,650.00,600.00,0,2025-12-10,Wednesday,0,1,60,4.8,25,3800,280,0.06,0
+NEW_036,Dresses,Cocktail Dresses,Reformation,Red,M,Viscose,Summer,Women,248.00,240.00,0,2025-06-22,Sunday,1,0,90,4.4,15,900,130,0.17,0
+NEW_037,Jackets,Fleece,Patagonia,Grey,XL,Polyester,Winter,Men,149.00,140.00,0,2025-11-15,Saturday,1,1,150,4.9,90,1200,290,0.05,0
+NEW_038,Shoes,Running Shoes,Hoka,Orange,11,Mesh,Spring,Men,160.00,150.00,0,2025-04-20,Sunday,1,0,180,4.5,35,800,140,0.12,0
+NEW_039,Jeans,Bootcut Jeans,Wrangler,Blue,36,Denim,Fall,Men,49.00,45.00,0,2025-09-08,Monday,0,0,300,4.0,50,400,60,0.22,0
+NEW_040,Accessories,Gloves,North Face,Black,M,Fleece,Winter,Unisex,45.00,40.00,0,2025-12-05,Friday,0,1,500,4.3,70,600,150,0.14,0
+NEW_041,Activewear,Track Suit,Puma,Red,L,Polyester,Spring,Men,110.00,100.00,0,2025-03-25,Tuesday,0,0,120,4.1,20,550,85,0.18,0
+NEW_042,Dresses,Sundresses,Old Navy,Yellow,S,Cotton,Summer,Women,39.99,35.00,0,2025-05-15,Thursday,0,0,600,3.8,40,700,110,0.20,0
+NEW_043,Shoes,Slippers,UGG,Tan,8,Shearling,Winter,Women,120.00,110.00,0,2025-11-25,Tuesday,0,1,300,4.7,250,2200,600,0.08,0
+NEW_044,Jackets,Windbreakers,Columbia,Blue,L,Nylon,Spring,Men,60.00,55.00,0,2025-04-05,Saturday,1,0,250,4.2,60,450,90,0.16,0
+NEW_045,Jeans,Wide Leg Jeans,Zara,White,28,Denim,Summer,Women,59.90,55.00,0,2025-06-12,Thursday,0,0,200,3.6,12,580,75,0.24,0
+NEW_046,Accessories,Ties,Brooks Brothers,Red,One Size,Silk,Fall,Men,85.00,80.00,0,2025-09-18,Thursday,0,0,100,4.4,18,300,40,0.10,0
+NEW_047,Activewear,Tennis Skirt,Nike,White,S,Polyester,Summer,Women,55.00,50.00,0,2025-06-08,Sunday,1,0,350,4.5,55,950,220,0.15,0
+NEW_048,Shoes,Oxfords,Cole Haan,Brown,10,Leather,Fall,Men,180.00,170.00,0,2025-10-15,Wednesday,0,0,120,4.3,30,500,80,0.13,0
+NEW_049,Jackets,Vests,Moncler,Black,M,Down,Winter,Men,1100.00,1000.00,0,2025-12-01,Monday,0,1,30,4.9,5,1800,120,0.06,0
+NEW_050,Accessories,Backpacks,Herschel,Grey,One Size,Canvas,Fall,Unisex,75.00,70.00,0,2025-08-25,Monday,0,0,400,4.6,150,850,200,0.11,0
