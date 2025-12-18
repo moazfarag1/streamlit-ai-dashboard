@@ -1,8 +1,3 @@
-# final_clean_app.py
-# Product Intelligence Engine - University Project
-# Run: streamlit run final_clean_app.py
-# CPU-only, no GPU required
-
 import streamlit as st
 import pickle
 import numpy as np
@@ -11,6 +6,7 @@ import xgboost as xgb
 import json
 import warnings
 import logging
+from datetime import datetime
 
 # Silence all warnings
 warnings.filterwarnings("ignore")
@@ -29,6 +25,7 @@ st.set_page_config(
 
 @st.cache_resource
 def load_sentiment_models():
+    """Load sentiment analysis models - DO NOT MODIFY"""
     try:
         sent_model = pickle.load(open('trained_model.sav', 'rb'))
         vect = pickle.load(open('vectorizer.sav', 'rb'))
@@ -39,6 +36,7 @@ def load_sentiment_models():
 
 @st.cache_resource
 def load_sales_model():
+    """Load retail sales forecasting model - DO NOT MODIFY"""
     try:
         sales_model = xgb.Booster()
         sales_model.load_model('artifacts/xgb_model.json')
@@ -50,21 +48,39 @@ def load_sales_model():
         return None, None
 
 @st.cache_resource
-def load_advanced_model():
+def load_advanced_price_model():
+    """
+    Load ML-based price & sales prediction model (XGBoost)
+    FIXED: Added validation to ensure loaded object is PriceSalesModel instance
+    Model artifact: final_sales_model.pkl
+    """
     try:
-        with open('sales_predictor_model.json', 'r') as f:
-            model_data = json.load(f)
+        with open('final_sales_model.pkl', 'rb') as f:
+            model = pickle.load(f)
+        
+        # SAFETY CHECK: Verify it's a PriceSalesModel instance with required methods
+        if not hasattr(model, 'predict_single') or not hasattr(model, 'predict_batch'):
+            print("ERROR: Loaded model does not have required methods")
+            return None
+        
+        # Verify methods are callable
+        if not callable(getattr(model, 'predict_single', None)) or not callable(getattr(model, 'predict_batch', None)):
+            print("ERROR: Model methods are not callable")
+            return None
+            
         print("Model loaded")
-        return model_data
-    except:
+        return model
+    except Exception as e:
+        print(f"ERROR loading model: {e}")
         return None
 
+# Load all models
 sentiment_model, vectorizer = load_sentiment_models()
 sales_model, label_encoder = load_sales_model()
-advanced_model = load_advanced_model()
+advanced_price_model = load_advanced_price_model()
 
 # =========================================================
-# SIDEBAR
+# SIDEBAR - UNCHANGED
 # =========================================================
 
 with st.sidebar:
@@ -94,7 +110,6 @@ with st.sidebar:
 if selected_option == '📊 Sentiment Analysis':
     st.header("📊 Customer Sentiment Analysis")
     
-    # Module explanation
     with st.expander("ℹ️ About This Module", expanded=False):
         st.markdown("""
         **What it does:** Analyzes customer reviews and classifies them as Positive or Negative using machine learning.
@@ -183,13 +198,12 @@ if selected_option == '📊 Sentiment Analysis':
             st.info("Please ensure your CSV is properly formatted and contains text data.")
 
 # =========================================================
-# MODULE 2: SIMPLE SALES FORECASTING
+# MODULE 2: RETAIL SALES FORECASTING (IMMUTABLE - DO NOT MODIFY)
 # =========================================================
 
 elif selected_option == '📦 Sales Forecasting':
     st.header("📦 Daily Sales Forecasting System")
     
-    # Module explanation
     with st.expander("ℹ️ About This Module", expanded=False):
         st.markdown("""
         **What it does:** Predicts how many units of a product will sell on a given day based on historical patterns, pricing, and promotional status.
@@ -386,12 +400,10 @@ elif selected_option == '📦 Sales Forecasting':
                         try:
                             df_pred = df_sales.copy()
                             
-                            # Validate and convert
                             df_pred[col_lag7] = pd.to_numeric(df_pred[col_lag7], errors='coerce')
                             df_pred[col_price] = pd.to_numeric(df_pred[col_price], errors='coerce')
                             df_pred[col_promo] = pd.to_numeric(df_pred[col_promo], errors='coerce')
                             
-                            # Check for invalid data
                             if df_pred[col_lag7].isna().any():
                                 st.error(f"⚠️ Invalid values found in '{col_lag7}' column. Must be numeric.")
                                 st.stop()
@@ -402,7 +414,6 @@ elif selected_option == '📦 Sales Forecasting':
                                 st.error(f"⚠️ Invalid values found in '{col_promo}' column. Must be numeric.")
                                 st.stop()
                             
-                            # Vectorized prediction
                             df_pred['product_id_str'] = df_pred[col_product].astype(str)
                             df_pred['product_encoded'] = df_pred['product_id_str'].map(label_encoder)
                             
@@ -473,94 +484,47 @@ elif selected_option == '📦 Sales Forecasting':
                 st.info("Please ensure your CSV is properly formatted.")
 
 # =========================================================
-# MODULE 3: ADVANCED PRICE & DEMAND PREDICTION
+# MODULE 3: ML-BASED PRICE & DEMAND PREDICTION (FIXED)
 # =========================================================
 
 elif selected_option == '💎 Price & Demand Prediction':
-    st.header("💎 Product Pricing & Demand Analysis")
+    st.header("💎 ML-Powered Price & Demand Analysis")
     
-    # Module explanation
     with st.expander("ℹ️ About This Module", expanded=False):
         st.markdown("""
-        **What it does:** Predicts the optimal price point and expected monthly sales volume for fashion and retail products based on multiple attributes.
+        **What it does:** Uses XGBoost machine learning to provide data-driven price recommendations and sales volume projections for retail products based on comprehensive product attributes and market conditions.
         
-        **How it works:** This system analyzes how different product characteristics historically influenced both pricing and sales volume. It uses weighted impact analysis to estimate market value and demand.
+        **How it works:** This system was trained on historical retail transactions. It learns patterns between product characteristics, pricing, market conditions, and actual sales performance to generate recommendations.
         
-        **The 6 Major Factors:**
-        - **Category:** Product type (Dresses, Shoes, Accessories, etc.)
-        - **Subcategory:** Specific style within category
-        - **Brand:** Brand reputation and positioning
-        - **Season:** Optimal selling season
-        - **Material:** Material quality and type
-        - **Gender:** Target demographic
+        **Key Prediction Outputs:**
+        - **Recommended Price:** Data-driven price point based on product attributes and market positioning
+        - **Predicted Units Sold:** Expected monthly sales volume
+        - **Predicted Revenue:** Estimated total revenue (Price × Units)
         
-        **Best for:** New product pricing strategy, market positioning analysis, demand forecasting for product launches.
+        **Major Factors Analyzed:**
+        - Product attributes (category, brand, material, gender, season)
+        - Cost structure (original price, competitor pricing)
+        - Market performance (rating, reviews, stock levels)
+        - Marketing metrics (web views, cart additions, return rate)
+        - Temporal factors (month, day of week, days since launch)
         
-        **Limitations:** Works best for fashion/apparel products. Predictions are based on historical patterns and may not account for sudden market changes or viral trends.
+        **Best for:** New product launches, pricing strategy exploration, revenue forecasting, competitive positioning analysis.
+        
+        **Model Performance:** Trained on diverse product categories. Results are estimates based on historical patterns.
+        
+        **Limitations:** Predictions are based on historical patterns and may not capture sudden market disruptions, viral trends, or unprecedented events. Results should be validated against business expertise and current market conditions.
         """)
     
-    if advanced_model is None:
-        st.error("⚠️ Advanced model not loaded. Please ensure sales_predictor_model.json exists.")
+    # FIXED: Enhanced model validation with clear error messaging
+    if advanced_price_model is None:
+        st.error("⚠️ ML model not loaded. Please ensure final_sales_model.pkl exists in the application directory.")
+        st.info("💡 The model file should be generated by running: `python train_model.py`")
         st.stop()
     
-    weights = advanced_model['weights']
-    
-    # Helper function for prediction (UNCHANGED)
-    def predict_advanced(category, subcategory, brand, season, material, gender):
-        base_price = weights['basePrice']
-        base_units = weights['baseUnits']
-        predicted_price = base_price
-        predicted_units = base_units
-        
-        # Track each component for breakdown
-        breakdown = {
-            'base': {'price': base_price, 'units': base_units},
-            'components': []
-        }
-        
-        if category in weights['categoryWeights']:
-            cat_price_impact = weights['categoryWeights'][category]['priceDiff']
-            cat_units_impact = weights['categoryWeights'][category]['unitsDiff']
-            predicted_price += cat_price_impact
-            predicted_units += cat_units_impact
-            breakdown['components'].append(('Category', category, cat_price_impact, cat_units_impact))
-        
-        if subcategory in weights['subcategoryWeights']:
-            sub_price_impact = weights['subcategoryWeights'][subcategory]['priceDiff']
-            sub_units_impact = weights['subcategoryWeights'][subcategory]['unitsDiff']
-            predicted_price += sub_price_impact
-            predicted_units += sub_units_impact
-            breakdown['components'].append(('Subcategory', subcategory, sub_price_impact, sub_units_impact))
-        
-        if brand in weights['brandWeights']:
-            brand_price_impact = weights['brandWeights'][brand]['priceDiff']
-            brand_units_impact = weights['brandWeights'][brand]['unitsDiff']
-            predicted_price += brand_price_impact
-            predicted_units += brand_units_impact
-            breakdown['components'].append(('Brand', brand, brand_price_impact, brand_units_impact))
-        
-        if season in weights['seasonWeights']:
-            season_price_impact = weights['seasonWeights'][season]['priceDiff']
-            season_units_impact = weights['seasonWeights'][season]['unitsDiff']
-            predicted_price += season_price_impact
-            predicted_units += season_units_impact
-            breakdown['components'].append(('Season', season, season_price_impact, season_units_impact))
-        
-        if material in weights['materialWeights']:
-            mat_price_impact = weights['materialWeights'][material]['priceDiff']
-            mat_units_impact = weights['materialWeights'][material]['unitsDiff']
-            predicted_price += mat_price_impact
-            predicted_units += mat_units_impact
-            breakdown['components'].append(('Material', material, mat_price_impact, mat_units_impact))
-        
-        if gender in weights['genderWeights']:
-            gen_price_impact = weights['genderWeights'][gender]['priceDiff']
-            gen_units_impact = weights['genderWeights'][gender]['unitsDiff']
-            predicted_price += gen_price_impact
-            predicted_units += gen_units_impact
-            breakdown['components'].append(('Gender', gender, gen_price_impact, gen_units_impact))
-        
-        return max(0, predicted_price), max(0, predicted_units), breakdown
+    # FIXED: Additional runtime check for method availability
+    if not hasattr(advanced_price_model, 'predict_single') or not hasattr(advanced_price_model, 'predict_batch'):
+        st.error("⚠️ Model loaded but missing required prediction methods. Please retrain the model.")
+        st.stop()
     
     st.markdown("### Choose Analysis Mode")
     prediction_mode = st.radio(
@@ -572,379 +536,420 @@ elif selected_option == '💎 Price & Demand Prediction':
     
     if prediction_mode == '🔍 Single Product':
         st.subheader("🔍 Individual Product Analysis")
-        st.markdown("Select product attributes to predict pricing and demand.")
+        st.markdown("Enter product details to receive ML-based price and demand predictions.")
         
-        with st.form("advanced_form"):
-            st.markdown("**📝 Select Product Attributes:**")
+        with st.form("ml_price_form"):
+            st.markdown("**🏷️ Core Product Information:**")
             
             col1, col2, col3 = st.columns(3)
+            
             with col1:
-                category = st.selectbox(
-                    "Category",
-                    options=sorted(weights['categoryWeights'].keys()),
-                    help="Main product category"
-                )
-                subcategory = st.selectbox(
-                    "Subcategory",
-                    options=sorted(weights['subcategoryWeights'].keys()),
-                    help="Specific product style"
-                )
+                brand = st.text_input("Brand", value="Nike", help="Product brand (e.g., Nike, Gucci, Zara)")
+                category = st.text_input("Category", value="Shoes", help="Main category (e.g., Shoes, Dresses, Accessories)")
+                subcategory = st.text_input("Subcategory", value="Sneakers", help="Specific style (e.g., Sneakers, Running Shoes)")
             
             with col2:
-                brand = st.selectbox(
-                    "Brand",
-                    options=sorted(weights['brandWeights'].keys()),
-                    help="Product brand"
-                )
-                season = st.selectbox(
-                    "Season",
-                    options=sorted(weights['seasonWeights'].keys()),
-                    help="Target season"
-                )
+                gender = st.selectbox("Gender", ["Men", "Women", "Unisex", "Kids"], help="Target demographic")
+                season = st.selectbox("Season", ["Spring", "Summer", "Fall", "Winter"], help="Optimal selling season")
+                material = st.text_input("Material", value="Leather", help="Primary material (e.g., Cotton, Leather, Polyester)")
             
             with col3:
-                material = st.selectbox(
-                    "Material",
-                    options=sorted(weights['materialWeights'].keys()),
-                    help="Primary material"
-                )
-                gender = st.selectbox(
-                    "Gender",
-                    options=sorted(weights['genderWeights'].keys()),
-                    help="Target demographic"
-                )
+                original_price = st.number_input("Original Cost ($)", min_value=0.0, value=50.0, step=1.0, help="Manufacturing or wholesale cost")
+                competitor_price = st.number_input("Competitor Price ($)", min_value=0.0, value=120.0, step=1.0, help="Average market price for similar products")
+                discount_pct = st.number_input("Discount %", min_value=0.0, max_value=100.0, value=0.0, step=1.0, help="Current discount percentage")
             
-            submit_btn = st.form_submit_button("🔮 Analyze Product", type="primary", use_container_width=True)
+            st.markdown("---")
+            st.markdown("**📊 Market Performance Metrics:**")
+            st.caption("Use defaults for new products or adjust based on historical data")
+            
+            col4, col5, col6 = st.columns(3)
+            
+            with col4:
+                rating = st.slider("Product Rating", 1.0, 5.0, 4.0, 0.1, help="Customer rating (1-5 stars)")
+                num_reviews = st.number_input("Number of Reviews", min_value=0, value=50, step=10, help="Total customer reviews")
+                return_rate = st.slider("Return Rate", 0.0, 1.0, 0.1, 0.01, help="Product return rate (0-1)")
+            
+            with col5:
+                stock_qty = st.number_input("Stock Quantity", min_value=0, value=100, step=10, help="Current inventory level")
+                web_views = st.number_input("Website Views", min_value=0, value=500, step=50, help="Monthly product page views")
+                cart_adds = st.number_input("Cart Additions", min_value=0, value=20, step=5, help="Monthly add-to-cart actions")
+            
+            with col6:
+                days_launch = st.number_input("Days Since Launch", min_value=0, value=30, step=1, help="Days since product was introduced")
+                is_holiday = st.checkbox("Holiday Season", help="Is this a holiday shopping period?")
+                is_weekend = st.checkbox("Weekend Pricing", help="Apply weekend pricing strategy?")
+            
+            submit_btn = st.form_submit_button("🔮 Generate ML Prediction", type="primary", use_container_width=True)
             
             if submit_btn:
-                try:
-                    price, units, breakdown = predict_advanced(category, subcategory, brand, season, material, gender)
-                    
-                    st.success("### ✅ Analysis Complete")
-                    
-                    # Main results
-                    result_col1, result_col2, result_col3 = st.columns(3)
-                    result_col1.metric("💰 Predicted Price", f"${price:.2f}")
-                    result_col2.metric("📦 Monthly Demand", f"{int(round(units))} units")
-                    
-                    # Calculate confidence based on extreme values
-                    is_luxury = price > 2000
-                    is_low_demand = units < 50
-                    is_high_demand = units > 100
-                    
-                    if is_luxury and is_low_demand:
-                        confidence = "Medium"
-                        confidence_color = "normal"
-                    elif is_luxury or is_high_demand:
-                        confidence = "High"
-                        confidence_color = "normal"
-                    else:
-                        confidence = "High"
-                        confidence_color = "normal"
-                    
-                    result_col3.metric("🎯 Confidence", confidence)
-                    
-                    expected_revenue = price * units
-                    st.info(f"📊 **Expected Monthly Revenue:** ${expected_revenue:,.2f}")
-                    
-                    st.markdown("---")
-                    
-                    # Detailed breakdown
-                    st.subheader("📊 Pricing & Demand Breakdown")
-                    st.markdown("See how each attribute influences the final prediction:")
-                    
-                    breakdown_col1, breakdown_col2 = st.columns(2)
-                    
-                    with breakdown_col1:
-                        st.markdown("**💰 Price Components:**")
-                        st.write(f"Base Price: ${breakdown['base']['price']:.2f}")
-                        for factor, value, price_impact, _ in breakdown['components']:
-                            sign = "+" if price_impact >= 0 else ""
-                            st.write(f"{factor} ({value}): {sign}${price_impact:.2f}")
-                        st.markdown(f"**Final Price: ${price:.2f}**")
-                    
-                    with breakdown_col2:
-                        st.markdown("**📦 Demand Components:**")
-                        st.write(f"Base Demand: {breakdown['base']['units']:.1f} units")
-                        for factor, value, _, units_impact in breakdown['components']:
-                            sign = "+" if units_impact >= 0 else ""
-                            st.write(f"{factor} ({value}): {sign}{units_impact:.1f} units")
-                        st.markdown(f"**Final Demand: {int(round(units))} units**")
-                    
-                    st.markdown("---")
-                    
-                    # Insights and warnings
-                    st.subheader("💡 Key Insights")
-                    
-                    # Find biggest impacts
-                    price_impacts = [(f, v, abs(p)) for f, v, p, u in breakdown['components']]
-                    price_impacts.sort(key=lambda x: x[2], reverse=True)
-                    
-                    units_impacts = [(f, v, abs(u)) for f, v, p, u in breakdown['components']]
-                    units_impacts.sort(key=lambda x: x[2], reverse=True)
-                    
-                    insight_col1, insight_col2 = st.columns(2)
-                    
-                    with insight_col1:
-                        st.markdown("**Biggest Price Drivers:**")
-                        for i, (factor, value, impact) in enumerate(price_impacts[:3], 1):
-                            st.write(f"{i}. {factor}: {value}")
-                    
-                    with insight_col2:
-                        st.markdown("**Biggest Demand Drivers:**")
-                        for i, (factor, value, impact) in enumerate(units_impacts[:3], 1):
-                            st.write(f"{i}. {factor}: {value}")
-                    
-                    # Smart warnings
-                    warnings_list = []
-                    
-                    if price > 5000:
-                        warnings_list.append("⚠️ **Luxury Pricing:** This is a high-end product. Ensure brand justifies premium.")
-                    
-                    if units < 30:
-                        warnings_list.append("⚠️ **Low Volume:** Expected sales are below 30 units/month. Consider niche marketing.")
-                    
-                    if price < 50 and 'Luxury' in brand or 'Premium' in brand:
-                        warnings_list.append("⚠️ **Brand Mismatch:** Price seems low for a premium brand.")
-                    
-                    if units > 150:
-                        warnings_list.append("📈 **High Demand:** Strong market demand predicted. Ensure adequate inventory.")
-                    
-                    if warnings_list:
+                with st.spinner("Running ML analysis..."):
+                    try:
+                        # FIXED: Schema alignment - building input dict that matches PriceSalesModel expectations
+                        # All required and optional fields from model.py are provided with safe defaults
+                        product_data = {
+                            # Core identifiers (will use defaults if not needed by model)
+                            'product_id': 'STREAMLIT_SINGLE',
+                            'date': datetime.now().strftime('%Y-%m-%d'),
+                            
+                            # User-provided categorical fields (match model.py cat_cols)
+                            'brand': str(brand).strip(),  # Ensure string type
+                            'category': str(category).strip(),
+                            'subcategory': str(subcategory).strip(),
+                            'gender': str(gender),
+                            'season': str(season),
+                            'material': str(material).strip(),
+                            'color': 'Standard',  # Default for optional field
+                            'size': 'M',  # Default for optional field
+                            
+                            # Numerical fields with proper types
+                            'original_price': float(original_price),
+                            'current_price': float(original_price),  # Will be predicted by model
+                            'competitor_price': float(competitor_price),
+                            'discount_percentage': float(discount_pct),
+                            'rating': float(rating),
+                            'number_of_reviews': int(num_reviews),
+                            'stock_quantity': int(stock_qty),
+                            'website_views': int(web_views),
+                            'cart_additions': int(cart_adds),
+                            'return_rate': float(return_rate),
+                            'days_since_launch': int(days_launch),
+                            
+                            # Binary flags (as integers 0/1)
+                            'is_holiday_season': 1 if is_holiday else 0,
+                            'is_weekend': 1 if is_weekend else 0,
+                            
+                            # Placeholder for target (will be predicted)
+                            'units_sold': 0
+                        }
+                        
+                        # FIXED: Interface enforcement - only calling predict_single method
+                        # Defensive check already done at module load, but double-checking
+                        if not hasattr(advanced_price_model, 'predict_single'):
+                            st.error("⚠️ Model interface error: predict_single method not found")
+                            st.stop()
+                        
+                        result = advanced_price_model.predict_single(product_data)
+                        
+                        # Extract results safely
+                        rec_price = result.get('Recommended_Price', 0)
+                        pred_units = result.get('Predicted_Units_Sold', 0)
+                        pred_revenue = result.get('Predicted_Revenue', 0)
+                        
+                        st.success("### ✅ ML Analysis Complete")
+                        
+                        # Main results
+                        result_col1, result_col2, result_col3 = st.columns(3)
+                        result_col1.metric("💰 Recommended Price", f"${rec_price:,.2f}")
+                        result_col2.metric("📦 Predicted Monthly Sales", f"{pred_units:,} units")
+                        result_col3.metric("💵 Expected Revenue", f"${pred_revenue:,.2f}")
+                        
+                        # Calculate insights
+                        profit_margin = ((rec_price - original_price) / rec_price * 100) if rec_price > 0 else 0
+                        comp_diff = ((rec_price - competitor_price) / competitor_price * 100) if competitor_price > 0 else 0
+                        
                         st.markdown("---")
-                        st.markdown("**⚠️ Recommendations & Warnings:**")
-                        for warning in warnings_list:
-                            st.markdown(warning)
-                    
-                    # Explanation section
-                    with st.expander("🔍 Understanding This Prediction"):
-                        st.markdown(f"""
-                        **How We Calculated This:**
+                        st.subheader("📊 Business Insights")
                         
-                        The model started with baseline values for a typical product:
-                        - Base Price: ${breakdown['base']['price']:.2f}
-                        - Base Demand: {breakdown['base']['units']:.0f} units/month
+                        insight_col1, insight_col2 = st.columns(2)
                         
-                        Then adjusted based on your specific attributes:
+                        with insight_col1:
+                            st.markdown("**💡 Pricing Strategy:**")
+                            st.write(f"• Profit Margin: {profit_margin:.1f}%")
+                            st.write(f"• vs Competitor: {'+' if comp_diff >= 0 else ''}{comp_diff:.1f}%")
+                            
+                            # FIXED: Academically conservative language
+                            if rec_price > competitor_price * 1.2:
+                                st.info("📈 Higher than market average")
+                            elif rec_price < competitor_price * 0.8:
+                                st.info("💵 Lower than market average")
+                            else:
+                                st.info("⚖️ Aligned with market average")
                         
-                        **Price Adjustments:**
-                        Your {brand} brand {'significantly increases' if any(p > 1000 for _, _, p, _ in breakdown['components']) else 'moderately affects'} the price.
-                        The {material} material adds {'premium' if any(p > 500 for _, _, p, _ in breakdown['components'] if _ == 'Material') else 'standard'} value.
+                        with insight_col2:
+                            st.markdown("**📈 Demand Forecast:**")
+                            st.write(f"• Expected Monthly Units: {pred_units:,}")
+                            st.write(f"• Revenue Estimate: ${pred_revenue:,.2f}")
+                            
+                            # FIXED: Conservative descriptive language
+                            if pred_units < 50:
+                                st.warning("⚠️ Low volume projected")
+                            elif pred_units > 200:
+                                st.success("🎯 High demand projected")
+                            else:
+                                st.info("✅ Moderate demand projected")
                         
-                        **Demand Adjustments:**
-                        The {category} category shows {'strong' if units > 80 else 'moderate'} market demand.
-                        {season} season timing {'boosts' if any(u > 5 for _, _, _, u in breakdown['components'] if _ == 'Season') else 'maintains'} expected sales.
+                        # Recommendations
+                        st.markdown("---")
+                        st.subheader("⚠️ Considerations")
                         
-                        **Confidence Assessment:**
-                        This prediction has {confidence} confidence because:
-                        {'- The combination of luxury pricing and niche appeal is well-documented' if is_luxury else '- This product profile matches common market patterns'}
-                        {'- Historical data supports these volume expectations' if not is_low_demand else '- Limited historical data for this exact combination'}
-                        """)
-                    
-                    print("Prediction complete")
-                    
-                except Exception as e:
-                    st.error(f"⚠️ Analysis error: {e}")
-                    st.info("Please verify all selections are valid.")
+                        recommendations = []
+                        
+                        if rec_price > original_price * 5:
+                            recommendations.append("🔥 **High markup detected** - Strong brand value indicated by model. Verify market positioning supports this.")
+                        
+                        if pred_units < 30 and rec_price > 1000:
+                            recommendations.append("💎 **Low volume, high margin** - Model suggests niche positioning. Consider specialized marketing.")
+                        
+                        if stock_qty < pred_units:
+                            recommendations.append(f"📦 **Inventory note** - Predicted demand ({pred_units}) exceeds current stock ({stock_qty}).")
+                        
+                        if return_rate > 0.2:
+                            recommendations.append("⚠️ **High return rate** - Consider product quality review or improved sizing information.")
+                        
+                        if cart_adds / web_views < 0.02 and web_views > 100:
+                            recommendations.append("🔍 **Low conversion rate** - Product page may benefit from optimization.")
+                        
+                        if not recommendations:
+                            recommendations.append("✅ **Balanced profile** - Product metrics are within typical ranges.")
+                        
+                        for rec in recommendations:
+                            st.markdown(rec)
+                        
+                        # Model explanation
+                        with st.expander("🔬 Understanding The ML Prediction"):
+                            st.markdown(f"""
+                            **How the Model Generated This Prediction:**
+                            
+                            The XGBoost model analyzed {len(product_data)} input features and compared your product to patterns learned from historical transactions.
+                            
+                            **Price Recommendation (${rec_price:,.2f}):**
+                            - Base cost: ${original_price:.2f}
+                            - Market context: {brand} brand in {category} category
+                            - Competitor benchmark: ${competitor_price:.2f}
+                            - Quality indicators: {rating}/5 stars, {num_reviews} reviews
+                            - Calculated markup: {profit_margin:.1f}%
+                            
+                            **Sales Forecast ({pred_units} units per month):**
+                            - Price point positioning: {rec_price:.2f}
+                            - Market engagement: {web_views} views → {cart_adds} cart adds ({cart_adds/web_views*100 if web_views > 0 else 0:.1f}% rate)
+                            - Seasonal timing: {season} season
+                            - Inventory availability: {stock_qty} units in stock
+                            
+                            **Important Note:**
+                            These predictions are estimates based on historical patterns. Actual results may vary based on market conditions, competitive actions, and other factors not captured in the model. Use these insights alongside business expertise and market knowledge.
+                            """)
+                        
+                        print("Prediction complete")
+                        
+                    except Exception as e:
+                        st.error(f"⚠️ Prediction error: {str(e)}")
+                        st.info("Please verify all inputs are valid. If the error persists, the model file may need to be retrained.")
     
     elif prediction_mode == '📂 Batch Upload (CSV)':
         st.subheader("📂 Batch Product Analysis")
-        st.markdown("Upload a CSV file to analyze multiple products at once.")
+        st.markdown("Upload a CSV file to analyze multiple products at once using ML predictions.")
+        
+        with st.expander("📋 Required CSV Columns", expanded=False):
+            st.markdown("""
+            Your CSV should contain these columns for best results:
+            
+            **Essential Columns:**
+            - `brand` - Product brand
+            - `category` - Product category
+            - `original_price` - Base cost
+            
+            **Recommended Columns:**
+            - `subcategory`, `gender`, `season`, `material`
+            - `competitor_price`, `discount_percentage`
+            - `rating`, `number_of_reviews`, `stock_quantity`
+            
+            **Optional (will use defaults if missing):**
+            - `website_views`, `cart_additions`, `return_rate`
+            - `days_since_launch`, `is_holiday_season`, `is_weekend`
+            - `color`, `size`, `product_id`, `date`
+            
+            Missing optional columns will be filled with safe default values.
+            """)
         
         uploaded_csv = st.file_uploader(
             "Upload CSV file",
             type=['csv'],
-            key="advanced_csv",
-            help="CSV should contain columns for all 6 attributes"
+            key="ml_price_csv",
+            help="CSV with product attributes for ML-based analysis"
         )
         
         if uploaded_csv is not None:
-            try:
-                df_adv = pd.read_csv(uploaded_csv, encoding='utf-8')
+            
+                df_ml = pd.read_csv(uploaded_csv, encoding='utf-8')
                 st.success("✅ CSV uploaded successfully")
                 print("CSV uploaded")
                 
-                if len(df_adv) == 0:
+                if len(df_ml) == 0:
                     st.error("The uploaded file is empty.")
                     st.stop()
                 
                 with st.expander("📋 Data Preview", expanded=True):
-                    st.dataframe(df_adv.head(10), use_container_width=True)
-                    st.caption(f"Showing first 10 of {len(df_adv)} rows")
+                    st.dataframe(df_ml.head(10), use_container_width=True)
+                    st.caption(f"Showing first 10 of {len(df_ml)} rows")
                 
-                if len(df_adv) > 10000:
-                    st.warning(f"⚠️ Large dataset: {len(df_adv)} rows. Processing may take time.")
+                # FIXED: Batch safety - validate required columns
+                required_cols = ['brand', 'category', 'original_price']
+                missing_cols = [c for c in required_cols if c not in df_ml.columns]
                 
-                st.markdown("---")
-                st.subheader("🔗 Map Your Columns")
-                st.markdown("Specify which columns contain each product attribute:")
+                if missing_cols:
+                    st.error(f"⚠️ Missing required columns: {', '.join(missing_cols)}")
+                    st.info("Please ensure your CSV contains at minimum: brand, category, original_price")
+                    st.stop()
                 
-                col_map1, col_map2, col_map3 = st.columns(3)
-                with col_map1:
-                    col_category = st.selectbox(
-                        "Column for 'Category'",
-                        options=df_adv.columns,
-                        help="Product category column"
-                    )
-                    col_subcategory = st.selectbox(
-                        "Column for 'Subcategory'",
-                        options=df_adv.columns,
-                        help="Product subcategory column"
-                    )
+                # FIXED: Fill missing optional columns with safe defaults matching model.py expectations
+                default_values = {
+                    'subcategory': 'General',
+                    'gender': 'Unisex',
+                    'season': 'Spring',
+                    'material': 'Standard',
+                    'color': 'Standard',
+                    'size': 'M',
+                    'competitor_price': 0.0,
+                    'discount_percentage': 0.0,
+                    'rating': 4.0,
+                    'number_of_reviews': 50,
+                    'stock_quantity': 100,
+                    'website_views': 500,
+                    'cart_additions': 20,
+                    'return_rate': 0.1,
+                    'days_since_launch': 30,
+                    'is_holiday_season': 0,
+                    'is_weekend': 0,
+                    'product_id': '',
+                    'date': datetime.now().strftime('%Y-%m-%d'),
+                    'current_price': 0.0,
+                    'units_sold': 0
+                }
                 
-                with col_map2:
-                    col_brand = st.selectbox(
-                        "Column for 'Brand'",
-                        options=df_adv.columns,
-                        help="Brand column"
-                    )
-                    col_season = st.selectbox(
-                        "Column for 'Season'",
-                        options=df_adv.columns,
-                        help="Season column"
-                    )
+                for col, default_val in default_values.items():
+                    if col not in df_ml.columns:
+                        df_ml[col] = default_val
                 
-                with col_map3:
-                    col_material = st.selectbox(
-                        "Column for 'Material'",
-                        options=df_adv.columns,
-                        help="Material column"
-                    )
-                    col_gender = st.selectbox(
-                        "Column for 'Gender'",
-                        options=df_adv.columns,
-                        help="Gender/demographic column"
-                    )
+                # Generate product IDs if missing or empty
+                if 'product_id' not in df_ml.columns or df_ml['product_id'].isna().all() or (df_ml['product_id'] == '').all():
+                    df_ml['product_id'] = [f'BATCH_{i:04d}' for i in range(len(df_ml))]
                 
-                if st.button("🚀 Analyze Batch", type="primary", use_container_width=True):
-                    with st.spinner("Processing batch analysis..."):
+                # FIXED: Ensure categorical fields are strings to prevent encoding errors
+                categorical_cols = ['brand', 'category', 'subcategory', 'gender', 'season', 'material', 'color', 'size']
+                for col in categorical_cols:
+                    if col in df_ml.columns:
+                        df_ml[col] = df_ml[col].fillna('Unknown').astype(str).str.strip()
+                
+                # FIXED: Ensure numerical fields are proper types
+                numeric_cols = ['original_price', 'competitor_price', 'discount_percentage', 'rating', 
+                               'number_of_reviews', 'stock_quantity', 'website_views', 'cart_additions', 
+                               'return_rate', 'days_since_launch']
+                for col in numeric_cols:
+                    if col in df_ml.columns:
+                        df_ml[col] = pd.to_numeric(df_ml[col], errors='coerce').fillna(default_values.get(col, 0))
+                
+                st.info(f"ℹ️ Processing {len(df_ml)} products with ML model...")
+                
+                if len(df_ml) > 1000:
+                    st.warning(f"⚠️ Large dataset ({len(df_ml)} rows). Processing may take 1-2 minutes.")
+                
+                if st.button("🚀 Run ML Batch Analysis", type="primary", use_container_width=True):
+                    with st.spinner("Running ML predictions on all products..."):
                         try:
-                            # Validate columns exist
-                            required_cols = [col_category, col_subcategory, col_brand, col_season, col_material, col_gender]
-                            missing = [c for c in required_cols if c not in df_adv.columns]
-                            if missing:
-                                st.error(f"Missing columns: {', '.join(missing)}")
+                            # FIXED: Interface enforcement - only calling predict_batch method
+                            if not hasattr(advanced_price_model, 'predict_batch'):
+                                st.error("⚠️ Model interface error: predict_batch method not found")
                                 st.stop()
                             
-                            # Convert to string for matching
-                            df_adv['cat_str'] = df_adv[col_category].astype(str)
-                            df_adv['sub_str'] = df_adv[col_subcategory].astype(str)
-                            df_adv['brand_str'] = df_adv[col_brand].astype(str)
-                            df_adv['season_str'] = df_adv[col_season].astype(str)
-                            df_adv['material_str'] = df_adv[col_material].astype(str)
-                            df_adv['gender_str'] = df_adv[col_gender].astype(str)
+                            # FIXED: Batch safety - try prediction with error handling
+                            results_df = advanced_price_model.predict_batch(df_ml)
                             
-                            # Create lookup dictionaries for vectorized operations
-                            cat_price_map = {k: v['priceDiff'] for k, v in weights['categoryWeights'].items()}
-                            cat_units_map = {k: v['unitsDiff'] for k, v in weights['categoryWeights'].items()}
-                            sub_price_map = {k: v['priceDiff'] for k, v in weights['subcategoryWeights'].items()}
-                            sub_units_map = {k: v['unitsDiff'] for k, v in weights['subcategoryWeights'].items()}
-                            brand_price_map = {k: v['priceDiff'] for k, v in weights['brandWeights'].items()}
-                            brand_units_map = {k: v['unitsDiff'] for k, v in weights['brandWeights'].items()}
-                            season_price_map = {k: v['priceDiff'] for k, v in weights['seasonWeights'].items()}
-                            season_units_map = {k: v['unitsDiff'] for k, v in weights['seasonWeights'].items()}
-                            material_price_map = {k: v['priceDiff'] for k, v in weights['materialWeights'].items()}
-                            material_units_map = {k: v['unitsDiff'] for k, v in weights['materialWeights'].items()}
-                            gender_price_map = {k: v['priceDiff'] for k, v in weights['genderWeights'].items()}
-                            gender_units_map = {k: v['unitsDiff'] for k, v in weights['genderWeights'].items()}
-                            
-                            # Vectorized prediction
-                            df_adv['predicted_price'] = weights['basePrice']
-                            df_adv['predicted_units'] = weights['baseUnits']
-                            
-                            df_adv['predicted_price'] += df_adv['cat_str'].map(cat_price_map).fillna(0)
-                            df_adv['predicted_units'] += df_adv['cat_str'].map(cat_units_map).fillna(0)
-                            df_adv['predicted_price'] += df_adv['sub_str'].map(sub_price_map).fillna(0)
-                            df_adv['predicted_units'] += df_adv['sub_str'].map(sub_units_map).fillna(0)
-                            df_adv['predicted_price'] += df_adv['brand_str'].map(brand_price_map).fillna(0)
-                            df_adv['predicted_units'] += df_adv['brand_str'].map(brand_units_map).fillna(0)
-                            df_adv['predicted_price'] += df_adv['season_str'].map(season_price_map).fillna(0)
-                            df_adv['predicted_units'] += df_adv['season_str'].map(season_units_map).fillna(0)
-                            df_adv['predicted_price'] += df_adv['material_str'].map(material_price_map).fillna(0)
-                            df_adv['predicted_units'] += df_adv['material_str'].map(material_units_map).fillna(0)
-                            df_adv['predicted_price'] += df_adv['gender_str'].map(gender_price_map).fillna(0)
-                            df_adv['predicted_units'] += df_adv['gender_str'].map(gender_units_map).fillna(0)
-                            
-                            # Clean up and finalize
-                            df_adv['predicted_price'] = df_adv['predicted_price'].clip(lower=0).round(2)
-                            df_adv['predicted_units'] = df_adv['predicted_units'].clip(lower=0).round().astype(int)
-                            df_adv['expected_revenue'] = (df_adv['predicted_price'] * df_adv['predicted_units']).round(2)
-                            
-                            # Remove temporary columns
-                            temp_cols = ['cat_str', 'sub_str', 'brand_str', 'season_str', 'material_str', 'gender_str']
-                            df_adv = df_adv.drop(columns=temp_cols)
+                            # Validate results
+                            if results_df is None or len(results_df) == 0:
+                                st.error("⚠️ Batch prediction returned no results")
+                                st.stop()
                             
                             st.markdown("---")
                             st.subheader("📊 Batch Analysis Results")
                             
-                            valid_prices = df_adv['predicted_price'].dropna()
-                            valid_units = df_adv['predicted_units'].dropna()
-                            total_revenue = df_adv['expected_revenue'].sum()
+                            # Summary metrics (with safe calculations)
+                            total_revenue = results_df['Predicted_Revenue'].sum() if 'Predicted_Revenue' in results_df.columns else 0
+                            avg_price = results_df['Recommended_Price'].mean() if 'Recommended_Price' in results_df.columns else 0
+                            total_units = results_df['Predicted_Units_Sold'].sum() if 'Predicted_Units_Sold' in results_df.columns else 0
                             
                             metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-                            metric_col1.metric("Total Products", len(df_adv))
-                            metric_col2.metric("✅ Successful", len(valid_prices))
-                            metric_col3.metric("Avg Price", f"${valid_prices.mean():.2f}")
+                            metric_col1.metric("Total Products", len(results_df))
+                            metric_col2.metric("Avg Price", f"${avg_price:,.2f}")
+                            metric_col3.metric("Total Units", f"{total_units:,.0f}")
                             metric_col4.metric("Total Revenue", f"${total_revenue:,.0f}")
                             
-                            if len(valid_prices) > 0:
-                                st.markdown("**Price Distribution:**")
-                                stat_col1, stat_col2, stat_col3, stat_col4 = st.columns(4)
-                                stat_col1.metric("Min Price", f"${valid_prices.min():.2f}")
-                                stat_col2.metric("Median Price", f"${valid_prices.median():.2f}")
-                                stat_col3.metric("Max Price", f"${valid_prices.max():.2f}")
-                                stat_col4.metric("Total Units", f"{valid_units.sum():,.0f}")
+                            st.markdown("**Price Distribution:**")
+                            price_col1, price_col2, price_col3, price_col4 = st.columns(4)
+                            price_col1.metric("Min Price", f"${results_df['Recommended_Price'].min():.2f}")
+                            price_col2.metric("Median Price", f"${results_df['Recommended_Price'].median():.2f}")
+                            price_col3.metric("Max Price", f"${results_df['Recommended_Price'].max():.2f}")
                             
-                            # Identify notable products
+                            # Safe margin calculation
+                            avg_original = df_ml['original_price'].mean()
+                            avg_margin = ((avg_price - avg_original) / avg_price * 100) if avg_price > 0 else 0
+                            price_col4.metric("Avg Margin", f"{avg_margin:.1f}%")
+                            
+                            # Top performers
                             st.markdown("---")
-                            st.markdown("### 🏆 Notable Products")
+                            st.markdown("### 🏆 Top Performers")
                             
-                            notable_col1, notable_col2 = st.columns(2)
+                            top_col1, top_col2 = st.columns(2)
                             
-                            with notable_col1:
-                                st.markdown("**💰 Highest Value Products:**")
-                                top_price = df_adv.nlargest(5, 'predicted_price')[[col_brand, col_category, 'predicted_price']]
-                                st.dataframe(top_price, use_container_width=True, hide_index=True)
+                            with top_col1:
+                                st.markdown("**💰 Highest Revenue Products:**")
+                                if len(results_df) >= 5:
+                                    top_revenue = results_df.nlargest(5, 'Predicted_Revenue')[
+                                        ['brand', 'category', 'Recommended_Price', 'Predicted_Units_Sold', 'Predicted_Revenue']
+                                    ]
+                                else:
+                                    top_revenue = results_df[
+                                        ['brand', 'category', 'Recommended_Price', 'Predicted_Units_Sold', 'Predicted_Revenue']
+                                    ]
+                                st.dataframe(top_revenue, use_container_width=True, hide_index=True)
                             
-                            with notable_col2:
-                                st.markdown("**📦 Highest Demand Products:**")
-                                top_units = df_adv.nlargest(5, 'predicted_units')[[col_brand, col_category, 'predicted_units']]
-                                st.dataframe(top_units, use_container_width=True, hide_index=True)
+                            with top_col2:
+                                st.markdown("**📈 Highest Volume Products:**")
+                                if len(results_df) >= 5:
+                                    top_volume = results_df.nlargest(5, 'Predicted_Units_Sold')[
+                                        ['brand', 'category', 'Recommended_Price', 'Predicted_Units_Sold', 'Predicted_Revenue']
+                                    ]
+                                else:
+                                    top_volume = results_df[
+                                        ['brand', 'category', 'Recommended_Price', 'Predicted_Units_Sold', 'Predicted_Revenue']
+                                    ]
+                                st.dataframe(top_volume, use_container_width=True, hide_index=True)
                             
+                            # Full results with filters
                             st.markdown("---")
                             st.markdown("### 📄 Complete Results")
                             
-                            # Add category-based filters
-                            filter_col1, filter_col2 = st.columns(2)
+                            filter_col1, filter_col2, filter_col3 = st.columns(3)
                             with filter_col1:
-                                show_luxury = st.checkbox("Show only luxury items (>$1000)", value=False)
+                                show_premium = st.checkbox("Premium items only (>$500)", value=False)
                             with filter_col2:
-                                show_high_demand = st.checkbox("Show only high demand (>100 units)", value=False)
+                                show_high_volume = st.checkbox("High volume only (>100 units)", value=False)
+                            with filter_col3:
+                                show_high_revenue = st.checkbox("High revenue only (>$10k)", value=False)
                             
-                            display_df = df_adv.copy()
-                            if show_luxury:
-                                display_df = display_df[display_df['predicted_price'] > 1000]
-                            if show_high_demand:
-                                display_df = display_df[display_df['predicted_units'] > 100]
+                            display_df = results_df.copy()
+                            if show_premium:
+                                display_df = display_df[display_df['Recommended_Price'] > 500]
+                            if show_high_volume:
+                                display_df = display_df[display_df['Predicted_Units_Sold'] > 100]
+                            if show_high_revenue:
+                                display_df = display_df[display_df['Predicted_Revenue'] > 10000]
                             
                             st.dataframe(display_df, use_container_width=True, height=400)
-                            st.caption(f"Displaying {len(display_df)} of {len(df_adv)} products")
+                            st.caption(f"Displaying {len(display_df)} of {len(results_df)} products")
                             
-                            csv_out = df_adv.to_csv(index=False).encode('utf-8')
+                            # Download results
+                            csv_out = results_df.to_csv(index=False).encode('utf-8')
                             st.download_button(
                                 label="📥 Download Complete Analysis (CSV)",
                                 data=csv_out,
-                                file_name='price_demand_analysis_results.csv',
+                                file_name='ml_price_predictions.csv',
                                 mime='text/csv',
                                 use_container_width=True
                             )
                             
+                            st.info("💡 Note: Predictions are estimates based on historical patterns. Validate results against current market conditions.")
+                            
                             print("Prediction complete")
                             
                         except Exception as e:
-                            st.error(f"⚠️ Analysis error: {e}")
-                            st.info("Please check your CSV format and ensure all required columns are present.")
-                            
-            except Exception as e:
-                st.error(f"⚠️ Error reading CSV: {e}")
-                st.info("Please ensure your CSV is properly formatted and encoded as UTF-8.")
+                            st.error(f"⚠️ Batch analysis error: {str(e)}")
