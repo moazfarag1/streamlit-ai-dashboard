@@ -1,6 +1,6 @@
+
  Product Intelligence Engine (PIE) 🤖
 This project is an enterprise-grade unified AI platform for strategic retail decision-making. It integrates pricing, demand forecasting, and customer sentiment analysis into a single dashboard.
-+1
 
 The platform is designed to handle:
 Intelligent Cold-Start Pricing: Pricing brand-new products with zero historical data.
@@ -46,3 +46,4 @@ streamlit run app.py
 Module 1 (Pricing): Attribute-Weighted Heuristic Engine.
 Module 2 (Forecasting): XGBoost with Temporal Feature Engineering.
 Module 3 (Sentiment): Optimized NLP Pipeline (PorterStemmer & TF-IDF).
+
